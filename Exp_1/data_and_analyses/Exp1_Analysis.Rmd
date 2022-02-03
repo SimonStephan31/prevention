@@ -1,0 +1,627 @@
+---
+title: "Exp. 1: Singular vs. General Preventive Queries for Different Data Sets"
+output:  
+  html_document:
+    number_sections: true
+    toc: true  
+    collapsed: false
+    toc_float: true
+    smooth_scroll: false
+    toc_depth: 3
+---
+
+```{r, message = FALSE, echo = FALSE, warning=FALSE}
+# packages
+library(ez)
+library(ggplot2)
+library(plyr)
+library(pastecs)
+library(ez)
+library(data.table)
+library(overlapping) # to compute the 
+library(tidyr)
+library(showtext)
+
+font_add_google("Poppins", "Poppins")
+font_add_google("Roboto Mono", "Roboto Mono")
+showtext_auto()
+```
+
+
+
+```{r}
+# read data 
+tdata <- read.delim("Exp1_data.txt", header=TRUE, sep="\t", na.strings="NA", dec=".", strip.white=TRUE)
+```
+
+
+# Subject Demographics
+
+```{r}
+# Demographics
+demogr_data <- tdata[!duplicated(tdata$sID), ]
+
+mean(demogr_data$Age)
+sd(demogr_data$Age)
+min(demogr_data$Age)
+max(demogr_data$Age)
+table(demogr_data$Sex)
+
+
+count(demogr_data, c("Query"))
+```
+
+
+# Data preparation 
+
+```{r}
+# declare factors and their levels 
+tdata$Preventer <- factor(tdata$Preventer, levels = c("sufficient", "necessary"), labels = c("Sufficient preventer", "Necessary preventer"))
+
+tdata$Query <- factor(tdata$Query, levels = c("strength", "singular"), labels = c("test query: preventive strength", "test query: singular prevention"))
+
+tdata_suff <- subset(tdata, Preventer == "Sufficient preventer")
+tdata_nec <- subset(tdata, Preventer == "Necessary preventer")
+
+
+
+tdata_suff$DataSet <- factor(tdata_suff$DataSet, levels = c("0_120_120_0", "0_120_90_30", "0_120_60_60", "0_120_30_90"), labels = c("a", "b", "c", "d"))
+tdata_nec$DataSet <- factor(tdata_nec$DataSet, levels = c("90_30_120_0", "60_60_120_0", "30_90_120_0", "0_120_120_0"), labels = c("a", "b", "c", "d"))
+
+tdata <- rbind(tdata_nec, tdata_suff)
+
+count(tdata, c("Preventer", "Query", "DataSet"))
+
+```
+
+# Graphs
+
+```{r}
+tdata_rating <- tdata
+tdata_rating$valueJitter <- jitter(tdata_rating$rating, factor = 1, amount = 4)
+
+library(see)
+
+theme_set(theme_light(base_size = 12, base_family = "Poppins"))
+
+pd <- position_dodge(width = 0.3)
+
+g <- ggplot(tdata_rating, aes(x=DataSet, y=valueJitter, group = sID, color = Query)) +
+  #ggtitle(my_title)+
+  facet_grid(. ~ Preventer)+
+  #geom_jitter(width = 0.15, alpha = 0.3)+
+  #geom_violin(aes(group=DataSet, fill=Query))+
+  #stat_summary(aes(y = rating, color = Query, group=Query), fun.data = mean_cl_boot, geom = "ribbon", color = NA, alpha = 0.4) +
+  geom_line(position = pd, alpha=0.15, size = 1.2) +
+  geom_point(position = pd, alpha = 0.17) +
+  #geom_violinhalf(aes(x=DataSet, y = rating, group = Query), fill = "#619CFF", position=position_dodge(), color = NA, alpha = 0.5)+
+  #stat_summary(aes(y = rating, group=Query, fill = Query), fun.y=median, colour="black", geom="point", shape = 24, size = 3, alpha = 0.9)+
+  stat_summary(aes(y = rating, color = Query, group=Query), fun.data = mean_cl_boot, geom = "errorbar", width = 0.1, color = "black") +
+  stat_summary(aes(y = rating, color = Query, group = Query), fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+  stat_summary(aes(y = rating, group=Query, fill = Query), fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.9)+
+  scale_y_continuous(limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+  scale_colour_manual(name  ="Test Query", labels=c("General preventive strength", "Singular prevention"), values = c("#F8766D","#619CFF")) +
+  scale_fill_manual(name  ="Test Query", labels=c("General preventive strength", "Singular prevention"), values = c("#F8766D","#619CFF")) +
+  labs(x = "Data Set", y = "Rating")+
+  theme(legend.position = "top")
+
+g
+#ggsave("lines.pdf",width=7.5,height=5)
+```
+
+```{r}
+####### Create a data frame with the predictions
+Preventer <- c(rep("Sufficient preventer",8), rep("Necessary preventer",8))
+
+Query <- c(rep("strength",4),rep("singular",4))
+
+DataSet <- rep(c("a", "b", "c", "d"),4)
+
+Prediction <- c(100,100,100,100,100,75,50,25,25,50,75,100,100,100,100,100)
+
+preds <- data.frame(Preventer, Query, DataSet, Prediction)
+
+
+
+#title <- c(rep("Full generalized power model", length(value)))
+
+preds$Preventer <- factor(preds$Preventer, levels = c("Sufficient preventer", "Necessary preventer"))
+preds$DataSet <- factor(preds$DataSet, levels = c("a", "b", "c", "d"), labels = c("a", "b", "c", "d"))
+preds$Query <- factor(preds$Query, levels = c("strength", "singular"), labels = c("test query: preventive strength", "test query: singular prevention"))
+
+
+## append predictions to the file containing experimental data 
+#tdata_long_withPreds <- merge(tdata_long,preds,by="variable")
+#tdata_long_withPreds <- subset(tdata_long_withPreds, select = c(1,2,4,6))
+#colnames(tdata_long_withPreds) <- c("variable", "sID", "rating", "IdealGenPred")
+
+############# Plot the predictions and save them
+
+theme_set(theme_light(base_size = 12, base_family = "Poppins"))
+
+#my_title <- expression(paste(bold("a"), " Full model"))
+
+p <- ggplot(preds, aes(x=DataSet, y=Prediction, color = Query)) +
+    #ggtitle(my_title)+
+    facet_grid(. ~ Preventer)+
+    scale_y_continuous(limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+    stat_summary(aes(y = Prediction, color = Query, group = Query), fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+    stat_summary(aes(y = Prediction, group=Query, fill = Query), fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.7)+
+    scale_colour_manual(name  ="Test Query", labels=c("General preventive strength", "Singular prevention"), values = c("#F8766D","#619CFF")) +
+    scale_fill_manual(name  ="Test Query", labels=c("General preventive strength", "Singular prevention"), values = c("#F8766D","#619CFF")) +
+    labs(x = "Data Set", y = "Prediction") +
+    theme(legend.position = "top")
+p
+
+#library(svglite)
+#ggsave("preds.pdf",width=7.5,height=5)
+```
+
+
+
+```{r}
+####### Create a data frame with the predictions obtained from the structure induction framework
+Preventer <- c(rep("Sufficient preventer",4), rep("Necessary preventer",4))
+
+#Query <- c(rep("strength",4),rep("singular",4))
+
+DataSet <- rep(c("a", "b", "c", "d"),2)
+
+Prediction <- c(0.9915163,0.7425737,0.4898410,0.2426732,0.9653958,0.9832394,0.9890165,0.9915163)*100
+
+preds <- data.frame(Preventer, DataSet, Prediction)
+
+
+
+#title <- c(rep("Full generalized power model", length(value)))
+
+preds$Preventer <- factor(preds$Preventer, levels = c("Sufficient preventer", "Necessary preventer"))
+preds$DataSet <- factor(preds$DataSet, levels = c("a", "b", "c", "d"), labels = c("a", "b", "c", "d"))
+
+
+## append predictions to the file containing experimental data 
+#tdata_long_withPreds <- merge(tdata_long,preds,by="variable")
+#tdata_long_withPreds <- subset(tdata_long_withPreds, select = c(1,2,4,6))
+#colnames(tdata_long_withPreds) <- c("variable", "sID", "rating", "IdealGenPred")
+
+############# Plot the predictions and save them
+
+theme_set(theme_light(base_size = 12, base_family = "Poppins"))
+
+#my_title <- expression(paste(bold("a"), " Full model"))
+
+p <- ggplot(preds, aes(x=DataSet, y=Prediction)) +
+    #ggtitle(my_title)+
+    facet_grid(. ~ Preventer)+
+    scale_y_continuous(limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+    stat_summary(aes(y = Prediction, group = Preventer), color = "#619CFF", fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+    stat_summary(aes(y = Prediction), fill = "#619CFF", fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.7)+
+    #scale_colour_manual(name  ="Test Query", labels=c("General preventive strength", "Singular prevention"), values = c("#F8766D","#619CFF")) +
+    #scale_fill_manual(name  ="Test Query", labels=c("General preventive strength", "Singular prevention"), values = c("#F8766D","#619CFF")) +
+    labs(x = "Data Set", y = "Prediction") +
+    theme(legend.position = "top")
+p
+
+#library(svglite)
+#ggsave("preds.pdf",width=7.5,height=5)
+```
+
+
+```{r}
+# Make subsets for the different test queries and add predictions of different models
+singular_dat <- subset(tdata_rating, Query == "test query: singular prevention")
+strength_dat <- subset(tdata_rating, Query == "test query: preventive strength")
+```
+
+
+```{r}
+### Predictions for singular 
+
+# normative model (attribution)
+
+Preventer <- c(rep("Sufficient preventer",4), rep("Necessary preventer",4))
+
+Query <- c(rep("singular",8))
+
+DataSet <- rep(c("a", "b", "c", "d"),2)
+
+Pred_singular <- c(100,75,50,25,100,100,100,100) # normative singular causation model 
+
+Pred_strength <- c(100,100,100,100,25,50,75,100) # simply answering with the general preventive causal strength (or: looking only at sufficiency)
+
+Pred_uncertain <- c(50,50,50,50,50,50,50,50) # uncertainty model
+
+preds_singular <- data.frame(Preventer, Query, DataSet, Pred_singular, Pred_strength, Pred_uncertain)
+
+preds_singular$Preventer <- factor(preds_singular$Preventer, levels = c("Sufficient preventer", "Necessary preventer"))
+preds_singular$DataSet <- factor(preds_singular$DataSet, levels = c("a", "b", "c", "d"), labels = c("a", "b", "c", "d"))
+preds_singular$Query <- factor(preds_singular$Query, levels = c("singular"), labels = c("test query: singular prevention"))
+
+```
+
+
+```{r}
+strength_dat <- subset(tdata_rating, Query == "test query: preventive strength")
+
+### Predictions for general preventive strength
+
+Preventer <- c(rep("Sufficient preventer",4), rep("Necessary preventer",4))
+
+Query <- c(rep("strength",8))
+
+DataSet <- rep(c("a", "b", "c", "d"),2)
+
+Pred_strength <- c(100,100,100,100,25,50,75,100) # simply answering with the general preventive causal strength (or: looking only at sufficiency)
+
+Pred_deltaP <- c(100,75,50,25,25,50,75,100) # uncertainty model
+
+Pred_uncertain <- c(50,50,50,50,50,50,50,50) # uncertainty model
+
+preds_strength <- data.frame(Preventer, Query, DataSet, Pred_strength, Pred_deltaP, Pred_uncertain)
+
+preds_strength$Preventer <- factor(preds_strength$Preventer, levels = c("Sufficient preventer", "Necessary preventer"))
+preds_strength$DataSet <- factor(preds_strength$DataSet, levels = c("a", "b", "c", "d"), labels = c("a", "b", "c", "d"))
+preds_strength$Query <- factor(preds_strength$Query, levels = c("strength"), labels = c("test query: preventive strength"))
+
+```
+
+
+```{r}
+# data merged with predictions 
+singular_dat <- merge(singular_dat, preds_singular, by=c("Query", "DataSet", "Preventer"))
+
+strength_dat <- merge(strength_dat, preds_strength, by=c("Query", "DataSet", "Preventer"))
+
+```
+
+
+# Model cluster
+
+```{r}
+
+#### singular
+
+
+data_cluster <- singular_dat
+
+# append absolut deviations as new columns
+data_cluster$Delta_Rating_IdealGenM <- abs(data_cluster$rating - data_cluster$Pred_singular)
+data_cluster$Delta_Rating_Strength <- abs(data_cluster$rating - data_cluster$Pred_strength)
+#data_cluster$Delta_Rating_RandomSelM <- abs(data_cluster$rating - data_cluster$Pred_uncertain)
+
+
+# subset containing only the deviations
+data_cluster <- subset(data_cluster, select = c(1:4,16:17))
+
+# mean absolute deviations for each participant
+data_cluster$meanDev_IdealGenM <- with(data_cluster, ave(Delta_Rating_IdealGenM, sID, FUN = function(x) mean(x, na.rm = TRUE)))
+data_cluster$meanDev_Strength <- with(data_cluster, ave(Delta_Rating_Strength, sID, FUN = function(x) mean(x, na.rm = TRUE)))
+
+
+data_cluster <- subset(data_cluster, select = c(1:4, 7:8))
+
+# get the minimum deviation for each subject
+data_cluster$Dev_Min <- apply(data_cluster[, c(5:6)], 1, FUN=min)
+
+# now take the minimum to assign each subject to a cluter 
+data_cluster$Cluster <- c(1:length(data_cluster$sID))
+
+data_cluster$Cluster[data_cluster$Dev_Min==data_cluster$meanDev_IdealGenM] <- "Equation_6"
+data_cluster$Cluster[data_cluster$Dev_Min==data_cluster$meanDev_Strength] <- "Equation_1"
+#data_cluster$Cluster[data_cluster$Dev_Min==data_cluster$meanDev_RandomSelM] <- "RandomSelM"
+
+c <- count(data_cluster, c("Preventer","Cluster"))
+c
+
+c2 <- c$freq/4     # number of subjects in each cluster
+c2
+
+sum(c2) # total number of subjects in the "singular" condition
+
+# now append the clustering results to the main data frame 
+data_cluster <- subset(data_cluster, select = c(1:4,8))
+data_cluster_singular <- data_cluster
+singularDat_with_cluster <- merge(singular_dat, data_cluster, by = c("sID", "Query", "DataSet", "Preventer"))
+
+singularDat_with_cluster$Cluster <- factor(singularDat_with_cluster$Cluster, levels = c("Equation_6", "Equation_1", "RandomSelM"))
+```
+
+
+
+```{r}
+
+#### strength
+
+data_cluster <- strength_dat
+
+# append absolut deviations as new columns
+data_cluster$Delta_Rating_Strength <- abs(data_cluster$rating - data_cluster$Pred_strength)
+data_cluster$Delta_Rating_DeltaP <- abs(data_cluster$rating - data_cluster$Pred_deltaP)
+
+# subset containing only the deviations
+data_cluster <- subset(data_cluster, select = c(1:4,16:17))
+
+# mean absolute deviations for each participant
+data_cluster$meanDev_Strength <- with(data_cluster, ave(Delta_Rating_Strength, sID, FUN = function(x) mean(x, na.rm = TRUE)))
+data_cluster$meanDev_DeltaP <- with(data_cluster, ave(Delta_Rating_DeltaP, sID, FUN = function(x) mean(x, na.rm = TRUE)))
+#data_cluster$meanDev_RandomSelM <- with(data_cluster, ave(Delta_Rating_RandomSelM, sID, FUN = function(x) mean(x, na.rm = TRUE)))
+
+
+
+
+data_cluster <- subset(data_cluster, select = c(1:4, 7:8))
+
+# get the minimum deviation for each subject
+data_cluster$Dev_Min <- apply(data_cluster[, c(5:6)], 1, FUN=min)
+
+# now take the minimum to assign each subject to a cluter 
+data_cluster$Cluster <- c(1:length(data_cluster$sID))
+
+
+data_cluster$Cluster[data_cluster$Dev_Min==data_cluster$meanDev_Strength] <- "Equation_1"
+data_cluster$Cluster[data_cluster$Dev_Min==data_cluster$meanDev_DeltaP] <- "DeltaP"
+
+c <- count(data_cluster, c("Preventer","Cluster"))
+c
+
+c2 <- c$freq/4     # number of subjects in each cluster
+c2
+
+sum(c2) # total number of subjects in the "singular" condition
+
+# now append the clustering results to the main data frame 
+data_cluster <- subset(data_cluster, select = c(1:4,8))
+data_cluster_strength <- data_cluster
+strengthDat_with_cluster <- merge(strength_dat, data_cluster, by = c("sID", "Query", "DataSet", "Preventer"))
+
+strengthDat_with_cluster$Cluster <- factor(strengthDat_with_cluster$Cluster, levels = c("Equation_1", "DeltaP", "RandomSelM"))
+
+
+```
+
+
+
+## Plot the clusters 
+
+```{r}
+# singular
+
+## necessary preventer
+
+singularDat_with_cluster_necessary <- subset(singularDat_with_cluster, Preventer == "Necessary preventer")
+
+my_title <- expression(paste(bold("a"), " Clustered singular causation judgments"))
+
+
+g <- ggplot(singularDat_with_cluster_necessary, aes(DataSet, valueJitter, group = sID, color = Cluster)) +
+  #ggtitle(my_title)+
+  facet_grid(. ~ Preventer)+
+  #geom_jitter(width = 0.15, alpha = 0.3)+
+  geom_line(position = pd, alpha=0.1, size = 1) +
+  geom_point(position = pd, alpha = 0.1) +
+  stat_summary(aes(y = rating, group = Cluster), fun.data = mean_cl_boot, geom = "errorbar", width = 0.1, size = 0.5, color = "black") +
+  stat_summary(aes(y = rating, color = Cluster, group = Cluster), fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+  stat_summary(aes(y = rating, group=Cluster, fill = Cluster), fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.7)+
+  #stat_summary(aes(y = value,group=Model, fill = Model), fun.y = median, geom = "point", shape = 24, size = 3, alpha = 0.5, 
+  #             position = position_dodge(width = 0.90), colour = "black") +
+  scale_y_continuous("Confidence that C = 1 prevented E = 1", limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+  #scale_colour_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  #scale_fill_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  scale_colour_manual(name  ="Model cluster", labels=c("Equation 6: 50%", "Equation 1: 50%","Random Choice: X%"),
+                        values = c("#574b90","#f19066","#00BA38")) +
+  scale_fill_manual(name  ="Model cluster", labels=c("Equation 6: 50%", "Equation 1: 50%","Random Choice: X%"),
+                        values = c("#574b90","#f19066","#00BA38")) +
+  labs(x = NULL, y = "Confidence that C = 1 prevented E = 1") +
+    theme(
+      #legend.position = "right",
+      legend.position = c(0.6, 0.15),
+      axis.title = element_text(size = 12),
+      axis.text.x = element_blank(),
+      panel.grid = element_blank(),
+      #panel.grid = element_line(colour="grey", linetype="dashed"),
+      legend.box.background = element_rect(colour = "black")
+      )
+g
+
+#library(svglite)
+#ggsave(file="IndividualJudgmentsCluster_necessary.svg", plot=g, width=4, height=4)
+#ggsave(file="IndividualJudgmentsCluster_necessary.pdf", plot=g, width=4, height=4)
+```
+
+
+```{r}
+## sufficient preventer
+
+singularDat_with_cluster_sufficient <- subset(singularDat_with_cluster, Preventer == "Sufficient preventer")
+
+my_title <- expression(paste(bold("a"), " Clustered singular causation judgments"))
+
+
+g <- ggplot(singularDat_with_cluster_sufficient, aes(DataSet, valueJitter, group = sID, color = Cluster)) +
+  #ggtitle(my_title)+
+  facet_grid(. ~ Preventer)+
+  #geom_jitter(width = 0.15, alpha = 0.3)+
+  #stat_summary(aes(y = rating, group = Cluster, color = Cluster), fun.data = mean_cl_boot, geom = "ribbon", width = 0, size = 0.5, color = NA) +
+  geom_line(position = pd, alpha=0.1, size = 1) +
+  geom_point(position = pd, alpha = 0.1) +
+  stat_summary(aes(y = rating, group = Cluster), fun.data = mean_cl_boot, geom = "errorbar", width = 0.1, size = 0.5, color = "black") +
+  stat_summary(aes(y = rating, color = Cluster, group = Cluster), fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+  stat_summary(aes(y = rating, group=Cluster, fill = Cluster), fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.7)+
+  #stat_summary(aes(y = value,group=Model, fill = Model), fun.y = median, geom = "point", shape = 24, size = 3, alpha = 0.5, 
+  #             position = position_dodge(width = 0.90), colour = "black") +
+  scale_y_continuous("Confidence that C = 1 prevented E = 1", limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+  #scale_colour_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  #scale_fill_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  scale_colour_manual(name  ="Model cluster", labels=c("Equation 6: 38.5%", "Equation 1: 61.5%","Random Choice: X%"),
+                        values = c("#574b90","#f19066","#00BA38")) +
+  scale_fill_manual(name  ="Model cluster", labels=c("Equation 6: 38.5%", "Equation 1: 61.5%","Random Choice: X%"),
+                        values = c("#574b90","#f19066","#00BA38")) +
+  labs(x = NULL, y = "Confidence that C = 1 prevented E = 1") +
+    theme(
+      #legend.position = "right",
+      legend.position = c(0.4, 0.15),
+      axis.title = element_text(size = 12),
+      axis.text.x = element_blank(),
+      panel.grid = element_blank(),
+      #panel.grid = element_line(colour="grey", linetype="dashed"),
+      legend.box.background = element_rect(colour = "black")
+      )
+g
+
+#library(svglite)
+#ggsave(file="IndividualJudgmentsCluster_sufficient.svg", plot=g, width=4, height=4)
+#ggsave(file="IndividualJudgmentsCluster_sufficient.pdf", plot=g, width=4, height=4)
+```
+
+```{r}
+# preventive strength
+
+## necessary preventer
+
+strengthDat_with_cluster_necessary <- subset(strengthDat_with_cluster, Preventer == "Necessary preventer")
+
+#my_title <- expression(paste(bold("a"), " Clustered singular causation judgments"))
+
+
+g <- ggplot(strengthDat_with_cluster_necessary, aes(DataSet, valueJitter, group = sID, color = Cluster)) +
+  #ggtitle(my_title)+
+  facet_grid(. ~ Preventer)+
+  #geom_jitter(width = 0.15, alpha = 0.3)+
+  geom_line(position = pd, alpha=0.1, size = 1) +
+  geom_point(position = pd, alpha = 0.1) +
+  stat_summary(aes(y = rating, group = Cluster), fun.data = mean_cl_boot, geom = "errorbar", width = 0.1, size = 0.5, color = "black") +
+  stat_summary(aes(y = rating, color = Cluster, group = Cluster), fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+  stat_summary(aes(y = rating, group=Cluster, fill = Cluster), fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.7)+
+  #stat_summary(aes(y = value,group=Model, fill = Model), fun.y = median, geom = "point", shape = 24, size = 3, alpha = 0.5, 
+  #             position = position_dodge(width = 0.90), colour = "black") +
+  scale_y_continuous("Confidence that C = 1 prevented E = 1", limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+  #scale_colour_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  #scale_fill_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  scale_colour_manual(name  ="Model cluster", labels=c("Equation 1: 100%", "Preventive Sufficiency: 50%","Random Choice: X%"),
+                        values = c("#3dc1d3","#f5cd79","#00BA38")) +
+  scale_fill_manual(name  ="Model cluster", labels=c("Equation 1: 100%", "Preventive Sufficiency: 50%","Random Choice: X%"),
+                        values = c("#3dc1d3","#f5cd79","#00BA38")) +
+  labs(x = NULL, y = "Confidence that C = 1 prevented E = 1") +
+    theme(
+      #legend.position = "right",
+      legend.position = c(0.6, 0.15),
+      axis.title = element_text(size = 12),
+      axis.text.x = element_blank(),
+      panel.grid = element_blank(),
+      #panel.grid = element_line(colour="grey", linetype="dashed"),
+      legend.box.background = element_rect(colour = "black")
+      )
+g
+
+#library(svglite)
+#ggsave(file="IndividualJudgmentsCluster_strength_necessary.svg", plot=g, width=4, height=4)
+#ggsave(file="IndividualJudgmentsCluster_strength_necessary.pdf", plot=g, width=4, height=4)
+```
+
+
+```{r}
+## sufficient preventer
+
+strengthDat_with_cluster_sufficient <- subset(strengthDat_with_cluster, Preventer == "Sufficient preventer")
+
+my_title <- expression(paste(bold("a"), " Clustered singular causation judgments"))
+
+
+g <- ggplot(strengthDat_with_cluster_sufficient, aes(DataSet, valueJitter, group = sID, color = Cluster)) +
+  #ggtitle(my_title)+
+  facet_grid(. ~ Preventer)+
+  #geom_jitter(width = 0.15, alpha = 0.3)+
+  geom_line(position = pd, alpha=0.1, size = 1) +
+  geom_point(position = pd, alpha = 0.1) +
+  stat_summary(aes(y = rating, group = Cluster), fun.data = mean_cl_boot, geom = "errorbar", width = 0.1, size = 0.5, color = "black") +
+  stat_summary(aes(y = rating, color = Cluster, group = Cluster), fun.y=mean, geom="line", size = 1.5, linetype = "solid", alpha = 0.9)+
+  stat_summary(aes(y = rating, group=Cluster, fill = Cluster), fun.y=mean, colour="black", geom="point", shape = 21, size = 3, alpha = 0.7)+
+  #stat_summary(aes(y = value,group=Model, fill = Model), fun.y = median, geom = "point", shape = 24, size = 3, alpha = 0.5, 
+  #             position = position_dodge(width = 0.90), colour = "black") +
+  scale_y_continuous("Confidence that C = 1 prevented E = 1", limits = c(-5, 105), breaks=seq(0, 100, 25), expand = c(0,0)) +
+  #scale_colour_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  #scale_fill_brewer(name  ="Model cluster", labels=c("Full Model: 50%", "Neglecting Mech. Diffs: 40%","Random Choice: 10%"),
+  #                      palette = "Accent") +
+  scale_colour_manual(name  ="Model cluster", labels=c("Equation 1: 84.6%", "|Delta-P|: 15.4%","Random Choice: X%"),
+                        values = c("#3dc1d3","#f5cd79","#00BA38")) +
+  scale_fill_manual(name  ="Model cluster", labels=c("Equation 1: 84.6%", "|Delta-P|: 15.4%","Random Choice: X%"),
+                        values = c("#3dc1d3","#f5cd79","#00BA38")) +
+  labs(x = NULL, y = "Confidence that C = 1 prevented E = 1") +
+    theme(
+      #legend.position = "right",
+      legend.position = c(0.4, 0.15),
+      axis.title = element_text(size = 12),
+      axis.text.x = element_blank(),
+      panel.grid = element_blank(),
+      #panel.grid = element_line(colour="grey", linetype="dashed"),
+      legend.box.background = element_rect(colour = "black")
+      )
+g
+
+#library(svglite)
+#ggsave(file="IndividualJudgmentsCluster_strength_sufficient.svg", plot=g, width=4, height=4)
+#ggsave(file="IndividualJudgmentsCluster_strength_sufficient.pdf", plot=g, width=4, height=4)
+```
+
+```{r}
+# rejoin the cluster data with the main data frame 
+merge1 <- rbind(data_cluster_singular, data_cluster_strength)
+tdata_with_clusters <- merge(tdata, merge1, by = c("sID", "Query", "DataSet", "Preventer"))
+
+#write table in folder
+#write.table(tdata_with_clusters, file = "tdata_final_with_clusters.txt", row.names=FALSE, sep="\t", quote=FALSE, append = FALSE)
+
+```
+
+
+
+# Statistical Analyses
+
+## ANOVA
+
+```{r, echo=FALSE}
+library(afex)
+ 
+
+a1 <- aov_car(rating ~ Preventer * Query * DataSet + Error(sID/DataSet), anova_table = list(es = "pes"), tdata_rating)
+a1
+```
+
+## Means and CIs
+
+```{r}
+# follow-up analysis 
+ library(emmeans)
+ ls1 <- lsmeans(a1, c("Query", "DataSet", "Preventer")) # joint evaluation (basically gives the same table)
+ ls1
+
+```
+## SDs
+
+```{r}
+# get SDs 
+aggregate(rating~ Query + DataSet + Preventer, sd, data=tdata_rating)
+```
+
+## Medians
+
+```{r}
+# get Medians
+aggregate(rating~ Query + DataSet + Preventer, median, data=tdata_rating)
+
+```
+
+
+
+
+
+
+
+

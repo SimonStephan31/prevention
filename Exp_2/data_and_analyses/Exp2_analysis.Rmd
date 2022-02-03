@@ -1,0 +1,329 @@
+---
+title: "Testing the role of the generative cause in prevenitve relations"
+output:  
+  html_document:
+    number_sections: true
+    toc: true  
+    collapsed: false
+    toc_float: true
+    smooth_scroll: false
+    toc_depth: 3
+---
+
+```{r, message = FALSE, echo = FALSE, warning=FALSE}
+# packages
+library(ez)
+library(ggplot2)
+library(plyr)
+library(pastecs)
+library(ez)
+library(data.table)
+library(overlapping) # to compute the 
+library(tidyr)
+library(showtext)
+
+font_add_google("Poppins", "Poppins")
+font_add_google("Roboto Mono", "Roboto Mono")
+showtext_auto()
+```
+
+
+
+# Subject Demographics
+
+```{r}
+# read data 
+tdata <- read.delim("Exp2_data.txt", header=TRUE, sep="\t", na.strings="NA", dec=".", strip.white=TRUE)
+
+
+
+
+# Demographics
+#demogr_data <- tdata[!duplicated(tdata$sID), ]
+
+mean(tdata$Age)
+sd(tdata$Age)
+min(tdata$Age)
+max(tdata$Age)
+table(tdata$Sex)
+
+
+count(tdata, c("danger", "order"))
+```
+# Data preparation
+
+```{r}
+# declare factors and their levels 
+#tdata$Effect_info <- factor(tdata$Effect_info, levels = c("full_info", "only_effect"), labels = c("full_info", "only_effect"))
+
+tdata$danger <- factor(tdata$danger, levels = c("weakest", "weak", "strong"), labels = c("qa = 0.25", "qa = 0.50", "qa = 1.0"))
+
+tdata$order <- factor(tdata$order, levels = c("non_attack_first","attack_first"), labels = c("non_attack_first","attacke_first"))
+
+#subset for types of ratings
+singular_ratings <- subset(tdata, select = c(1:3,singular_query_a, singular_query_na))
+
+
+# subset for strength ratings 
+strength_ratings <- subset(tdata, select = c(1:3,preventive_strength, danger_strength))
+
+
+# turning into long format
+singular_ratings <- singular_ratings %>% gather(Test_case, Rating, singular_query_a:singular_query_na, factor_key=TRUE)
+
+strength_ratings <- strength_ratings %>% gather(Variable, Rating, preventive_strength:danger_strength, factor_key=TRUE)
+
+
+
+# transform ratings 
+singular_ratings$Rating <- (singular_ratings$Rating - 1) * 0.10
+strength_ratings$Rating <- (strength_ratings$Rating - 1) * 0.10
+
+
+strength_ratings$Variable <- factor(strength_ratings$Variable, levels = c("preventive_strength","danger_strength"), labels = c("Preventive cause","Generative cause"))
+
+singular_ratings$Test_case <- factor(singular_ratings$Test_case, levels = c("singular_query_a","singular_query_na"), labels = c("attacked","non-attacked"))
+
+
+```
+
+
+# Graphs
+
+```{r}
+myTheme <- theme(plot.title = element_text(face="bold", size = 22),
+        axis.title.x = element_text(face = "bold", size = 20),
+        axis.title.y = element_text(face = "bold", size = 20),
+        axis.text.x = element_text(size = 18, angle = 0), 
+        axis.text.y = element_text(size = 14, angle = 0),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(face = "bold", size = 18),
+        strip.text.x = element_text(size = 18),
+        #panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line.x = element_line(colour = "black"), 
+        axis.line.y = element_line(colour = "black"),
+        axis.text = element_text(colour ="black"), 
+        axis.ticks = element_line(colour ="black"))
+
+
+library(see)
+## first, turn sID into a factor
+strength_ratings$sID <- factor(strength_ratings$sID)
+
+pd <- position_dodge(width = 0.3)
+
+strength_ratings$valueJitter <- jitter(strength_ratings$Rating, factor = 1, amount = 0.04)
+
+theme_set(theme_light(base_size = 20, base_family = "Poppins"))
+
+# new labes for the facets 
+#effects.labs <- c("Preventive cause", "Generative cause")
+#names(effects.labs) <- c("same domain", "different domains")
+
+palette <- c("#FFAE49", "#8cb495", "#12658b")
+
+
+g <- ggplot(strength_ratings, aes(x=danger, y=valueJitter, group=sID)) +
+  #guides(fill=FALSE)+
+  #facet_grid( ~ type_effect, labeller = labeller(type_effect =effects.labs))+
+  facet_grid( ~ Variable)+
+  #ggtitle("Subjects' causal srength ratings") +
+  scale_y_continuous(limits = c(-0.05, 1.05), breaks=seq(0, 1.00, 0.10), expand = c(0,0)) +
+  scale_x_discrete(labels=c("qa = 0.25", "qa = 0.5", "qa = 1.0")) +
+  #stat_summary(fun.y = mean, geom = "bar", position = "dodge", colour = "black", alpha =0.5) +
+  geom_violinhalf(aes(y = Rating, group = danger), color = NA, fill = "#F8766D", position=position_dodge(1), alpha = 0.5)+
+  #geom_line(position = pd, color = "black", size = 1, alpha=0.04) +
+  geom_point(position = pd, alpha = 0.2, color = "#F8766D", alpha = 0.6) +
+  #geom_jitter()+
+  stat_summary(aes(y = Rating, group = 1), fun.data = mean_cl_boot, geom = "errorbar", width = 0, size = 1) +
+  #stat_summary(aes(y = Rating,group=1), fun.y=mean, colour="black", geom="line",group=1, size = 1.5, linetype = "solid", alpha = 1)+
+  stat_summary(aes(y = Rating), fun.y=mean, geom="point", color = "black", fill = "#F8766D", shape = 22, size = 5, group=1, alpha = 1)+
+  stat_summary(aes(y = Rating), fun.y=median, geom="point", color = "black", shape = 3, size = 4, group=1, alpha = 1, position = position_dodge(width = 0.5))+
+  labs(x = "Strength of generative cause", y = "Causal Strength Rating") +
+  scale_color_manual(name = "Entity",values=palette)+
+  scale_fill_manual(name = "Entity",values=palette)+
+  theme(legend.position = "none")+
+  myTheme
+g
+
+
+ggsave("results_strengths.svg",width=10,height=5)
+ggsave("results_strengths.pdf",width=10,height=5)
+```
+
+
+```{r}
+myTheme <- theme(plot.title = element_text(face="bold", size = 22),
+        axis.title.x = element_text(face = "bold", size = 20),
+        axis.title.y = element_text(face = "bold", size = 20),
+        axis.text.x = element_text(size = 15, angle = 0), 
+        axis.text.y = element_text(size = 14, angle = 0),
+        legend.text = element_text(size = 18),
+        legend.title = element_text(face = "bold", size = 18),
+        strip.text.x = element_text(size = 18),
+        #panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line.x = element_line(colour = "black"), 
+        axis.line.y = element_line(colour = "black"),
+        axis.text = element_text(colour ="black"), 
+        axis.ticks = element_line(colour ="black"))
+
+
+library(see)
+## first, turn sID into a factor
+singular_ratings$sID <- factor(strength_ratings$sID)
+
+pd <- position_dodge(width = 0.3)
+
+singular_ratings$valueJitter <- jitter(strength_ratings$Rating, factor = 1, amount = 0.04)
+
+theme_set(theme_light(base_size = 20, base_family = "Poppins"))
+
+# new labes for the facets 
+#effects.labs <- c("Preventive cause", "Generative cause")
+#names(effects.labs) <- c("same domain", "different domains")
+
+palette <- c("#FFAE49", "#8cb495", "#12658b")
+
+
+g <- ggplot(singular_ratings, aes(x=Test_case, y=valueJitter, group=sID)) +
+  #guides(fill=FALSE)+
+  #facet_grid( ~ type_effect, labeller = labeller(type_effect =effects.labs))+
+  facet_grid( ~ danger)+
+  #ggtitle("Subjects' causal srength ratings") +
+  scale_y_continuous(limits = c(-0.05, 1.05), breaks=seq(0, 1.00, 0.10), expand = c(0,0)) +
+  scale_x_discrete(labels=c("[c+, e-, a+]", "[c+, e-, a-]")) +
+  #stat_summary(fun.y = mean, geom = "bar", position = "dodge", colour = "black", alpha =0.5) +
+  geom_violinhalf(aes(y = Rating, group = Test_case), fill = "#619CFF", color = NA, position=position_dodge(1), alpha = 0.4)+
+  geom_line(position = pd, color = "black", size = 1, alpha=0.04) +
+  geom_point(color = "#619CFF", position = pd, alpha = 0.2) +
+  #geom_jitter()+
+  stat_summary(aes(y = Rating, group = 1), fun.data = mean_cl_boot, geom = "errorbar", width = 0, size = 1) +
+  stat_summary(aes(y = Rating,group=1), fun.y=mean, colour="#619CFF", geom="line",group=1, size = 1.5, linetype = "solid", alpha = 1)+
+  stat_summary(aes(y = Rating), fill = "#619CFF", fun.y=mean, geom="point", color = "black", shape = 22, size = 4, group=1, alpha = 1)+
+  stat_summary(aes(y = Rating), fun.y = median, geom="point", color = "black", shape = 3, size = 4, group=1, alpha = 1, position = position_dodge(width = 0.5))+
+  labs(x = "Singular Test Case", y = "Singular Prevention Rating") +
+  scale_color_manual(name = "Entity",values=palette)+
+  scale_fill_manual(name = "Entity",values=palette)+
+  theme(legend.position = "none")+
+  myTheme
+g
+
+
+ggsave("results_lines_singular.svg",width=10,height=5)
+ggsave("results_lines_singular.pdf",width=10,height=5)
+```
+
+
+
+# Statistical Analyses
+
+## Strength ratings for preventer and generator
+
+
+```{r, echo=FALSE}
+library(afex)
+a1 <- aov_car(Rating ~ danger * Variable + Error(sID/Variable), anova_table = list(es = "pes"), strength_ratings)
+ a1
+```
+
+
+
+```{r}
+# follow-up analysis to get means etc.
+library(emmeans)
+ls1 <- lsmeans(a1, c("danger", "Variable")) # joint evaluation (basically gives the same table)
+ls1
+
+
+# contrasts 
+contrasts <- emmeans(a1, ~ danger*Variable)
+s <- pairs(contrasts, adjust = "none")
+s
+```
+No differences for the preventive strength queries. For the generative strength queries, ratings did not differ between qa = 0.25 and qa = 0.50, but ratings were significantly higher in the qa = 1.0 condition.
+
+
+
+```{r}
+# get descriptives tha include medians
+library(vtable)
+sum_data <- strength_ratings
+sum_data$cond <- paste(sum_data$danger, sum_data$Variable)
+
+sum <- st(sum_data, vars = c('Rating'), group = c("cond"), add.median=T, out='return', group.long=T)
+sum
+
+# see: https://cran.r-project.org/web/packages/vtable/vignettes/sumtable.html
+```
+
+
+
+## Singular Prevention ratings 
+
+```{r, echo=FALSE}
+library(afex)
+a1 <- aov_car(Rating ~ danger * Test_case *order + Error(sID/Test_case), anova_table = list(es = "pes"), singular_ratings)
+a1
+```
+
+
+
+```{r}
+# follow-up analysis to get means etc.
+library(emmeans)
+ls1 <- lsmeans(a1, c("danger", "Test_case")) # joint evaluation (basically gives the same table)
+ls1
+
+
+# contrasts 
+contrasts <- emmeans(a1, ~ danger*Test_case)
+s <- pairs(contrasts, adjust = "none")
+s
+```
+
+```{r}
+# get descriptives tha include medians
+library(vtable)
+sum_data <- singular_ratings
+sum_data$cond <- paste(sum_data$danger, sum_data$Test_case)
+
+sum <- st(sum_data, vars = c('Rating'), group = c("cond"), add.median=T, out='return', group.long=T)
+sum
+
+# see: https://cran.r-project.org/web/packages/vtable/vignettes/sumtable.html
+```
+
+# Correlation analysis
+
+An interesting question is whether subjects who gave very high qa ratings tended to give the highest singular prevention ratings. 
+
+
+```{r}
+cor.test(tdata$danger_strength, tdata$singular_query_a)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

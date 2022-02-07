@@ -1,0 +1,198 @@
+---
+title: "Preemption in Prevention Suppl."
+output:  
+  html_document:
+    number_sections: true
+    toc: true  
+    collapsed: false
+    toc_float: true
+    smooth_scroll: false
+    toc_depth: 3
+---
+
+
+
+
+```{r, message = FALSE, echo = FALSE, warning=FALSE}
+# packages
+library(ez)
+library(ggplot2)
+library(plyr)
+library(pastecs)
+library(ez)
+library(data.table)
+library(overlapping) # to compute the 
+library(tidyr)
+library(showtext)
+#install.packages("expss")
+library(expss)
+
+font_add_google("Poppins", "Poppins")
+font_add_google("Roboto Mono", "Roboto Mono")
+showtext_auto()
+```
+
+
+
+# Subject Demographics
+
+```{r}
+# read data 
+tdata <- read.delim("Exp_supp1_data.txt", header=TRUE, sep="\t", na.strings="NA", dec=".", strip.white=TRUE)
+
+
+# Demographics
+#demogr_data <- tdata[!duplicated(tdata$sID), ]
+
+mean(tdata$age)
+sd(tdata$age)
+min(tdata$age)
+max(tdata$age)
+table(tdata$gender)
+
+```
+
+
+
+# Data preparation
+
+```{r}
+# declare factors and their levels 
+tdata$condition_1 <- factor(tdata$condition_1, levels = c(1, 2), labels = c("left", "right"))
+
+
+# recode responses so that 1 = first, 2 = second, 3 = both
+tdata$selection_rec <- c(1:length(tdata$run_id))
+tdata$selection_rec[tdata$condition_1 =="left" & tdata$main_dv == 1] <- 1
+tdata$selection_rec[tdata$condition_1 =="left" & tdata$main_dv == 2] <- 2
+tdata$selection_rec[tdata$condition_1 =="left" & tdata$main_dv == 3] <- 3
+
+tdata$selection_rec[tdata$condition_1 =="right" & tdata$main_dv == 1] <- 2
+tdata$selection_rec[tdata$condition_1 =="right" & tdata$main_dv == 2] <- 1
+tdata$selection_rec[tdata$condition_1 =="right" & tdata$main_dv == 3] <- 3
+
+
+
+
+tdata$selection_verbal <- c(1:length(tdata$run_id))
+tdata$selection_verbal[tdata$selection_rec == 1] <- "first"
+tdata$selection_verbal[tdata$selection_rec == 2] <- "second"
+tdata$selection_verbal[tdata$selection_rec == 3] <- "both"
+
+
+
+```
+
+
+## Get percentages 
+
+What preventer is selected in the different prevention cases?
+
+```{r}
+# create a summary dataset that also contains the percentages
+library(dplyr)
+plotdata <- tdata %>%
+  group_by(selection_verbal) %>%
+  summarize(n = n()) %>% 
+  mutate(pct = n/sum(n),
+         lbl = scales::percent(pct))
+
+plotdata
+```
+
+
+## Conduct Proportion tests 
+
+They yield the 95% CIs for the proportion estimates.
+
+
+```{r}
+# append CI of the proportions 
+cases <- plotdata$n
+N <- sum(plotdata$n)
+
+t <- prop.test(cases[1],N, p = 1/3, correct=FALSE) # get CI for Invariance government
+CI_both_min <- t$conf.int[1]
+CI_both_max <- t$conf.int[2]
+t
+
+
+t <- prop.test(cases[2],N, p = 1/3, correct=FALSE) # get CI for Invariance government
+CI_first_min <- t$conf.int[1]
+CI_first_max <- t$conf.int[2]
+t
+
+
+
+
+CI_low <- c(CI_both_min, CI_first_min)
+
+CI_up <- c(CI_both_max, CI_first_max)
+
+plotdata$CI_low <- CI_low
+plotdata$CI_up <- CI_up
+
+```
+
+Subjects could choose between three options (first, second, both). The majority chose the first preventer, with p = 0.6875. This probability is difference from chance (p = 0.33). 
+
+
+# Graph of the Results 
+
+Subjects' preventer selections.
+
+
+```{r}
+library(scales)
+theme_set(theme_light(base_size = 12, base_family = "Poppins"))
+
+myTheme <- theme(plot.title = element_text(face="bold", size = 22),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 16, face = "bold"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 12, angle = 0),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(face = "bold", size = 16),
+        strip.text.x = element_text(size = 16),
+        #panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        panel.background = element_blank(), 
+        axis.line.x = element_line(colour = "black"), 
+        axis.line.y = element_line(colour = "black"),
+        axis.text = element_text(colour ="black"), 
+        axis.ticks = element_line(colour ="black"),
+        axis.ticks.x = element_blank())
+
+
+g<- ggplot(plotdata, 
+       aes(x = 0, y = pct,
+           fill = factor(selection_verbal, 
+                         levels = c("first", "second", "both"),
+                         labels = c("first", "second", "both")))) +
+  scale_y_continuous(limits = seq(0, 2),
+                     breaks = seq(0, 1, .25),
+                     expand = c(0,0),
+                     label = percent) +
+  coord_cartesian(ylim = c(0, 1))+
+  geom_bar(stat = "identity",
+           position = "dodge") +
+  scale_y_continuous(breaks = seq(0, 1, .2), 
+                     label = percent) +
+  geom_text(aes(label = lbl), 
+            size = 5, 
+            position = position_dodge(width = .9),
+            vjust = -5.7) +
+  geom_errorbar(aes(ymin=CI_low, ymax=CI_up), width=.0,
+                 position=position_dodge(.9)) +
+  #geom_hline(yintercept=1/3, linetype="dashed", color = "red")+
+  scale_fill_brewer(palette = "Set2") +
+  labs(y = "Percent", 
+       fill = "Singular \nPreventer",
+       x = "Singular occasion")+
+  myTheme
+
+g
+ggsave("Exp_suppl1_selections.svg",width=4,height=4)
+```
+
+

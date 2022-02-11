@@ -149,12 +149,13 @@ g <- ggplot(strength_ratings, aes(x=danger, y=valueJitter, group=sID)) +
 g
 
 
-ggsave("results_strengths.svg",width=10,height=5)
-ggsave("results_strengths.pdf",width=10,height=5)
+#ggsave("results_strengths.svg",width=10,height=5)
+#ggsave("results_strengths.pdf",width=10,height=5)
 ```
 
 
 ```{r}
+library(tidyverse)
 myTheme <- theme(plot.title = element_text(face="bold", size = 22),
         axis.title.x = element_text(face = "bold", size = 20),
         axis.title.y = element_text(face = "bold", size = 20),
@@ -196,11 +197,21 @@ g <- ggplot(singular_ratings, aes(x=Test_case, y=valueJitter, group=sID)) +
   #ggtitle("Subjects' causal srength ratings") +
   scale_y_continuous(limits = c(-0.05, 1.05), breaks=seq(0, 1.00, 0.10), expand = c(0,0)) +
   scale_x_discrete(labels=c("[c+, e-, a+]", "[c+, e-, a-]")) +
-  #stat_summary(fun.y = mean, geom = "bar", position = "dodge", colour = "black", alpha =0.5) +
+  geom_hline(data = singular_ratings %>% filter(danger == "qa = 0.25"),
+             aes(yintercept = 0.721), col = "black", linetype = "dashed")+
+  geom_hline(data = singular_ratings %>% filter(danger == "qa = 0.50"),
+             aes(yintercept = 0.777), col = "black", linetype = "dashed")+
+  geom_hline(data = singular_ratings %>% filter(danger == "qa = 1.0"),
+             aes(yintercept = 0.881), col = "black", linetype = "dashed")+
+  geom_hline(data = singular_ratings %>% filter(danger == "qa = 0.25"),
+             aes(yintercept = 0.452), col = "black", linetype = "dashed")+
+  geom_hline(data = singular_ratings %>% filter(danger == "qa = 0.50"),
+             aes(yintercept = 0.428), col = "black", linetype = "dashed")+
+  geom_hline(data = singular_ratings %>% filter(danger == "qa = 1.0"),
+             aes(yintercept = 0.445), col = "black", linetype = "dashed")+
   geom_violinhalf(aes(y = Rating, group = Test_case), fill = "#619CFF", color = NA, position=position_dodge(1), alpha = 0.4)+
   geom_line(position = pd, color = "black", size = 1, alpha=0.04) +
   geom_point(color = "#619CFF", position = pd, alpha = 0.2) +
-  #geom_jitter()+
   stat_summary(aes(y = Rating, group = 1), fun.data = mean_cl_boot, geom = "errorbar", width = 0, size = 1) +
   stat_summary(aes(y = Rating,group=1), fun.y=mean, colour="#619CFF", geom="line",group=1, size = 1.5, linetype = "solid", alpha = 1)+
   stat_summary(aes(y = Rating), fill = "#619CFF", fun.y=mean, geom="point", color = "black", shape = 22, size = 4, group=1, alpha = 1)+
@@ -213,8 +224,8 @@ g <- ggplot(singular_ratings, aes(x=Test_case, y=valueJitter, group=sID)) +
 g
 
 
-ggsave("results_lines_singular.svg",width=10,height=5)
-ggsave("results_lines_singular.pdf",width=10,height=5)
+#ggsave("results_lines_singular.svg",width=10,height=5)
+#ggsave("results_lines_singular.pdf",width=10,height=5)
 ```
 
 

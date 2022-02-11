@@ -434,48 +434,81 @@ body {
 <div id="experimental-materials" class="section level1">
 <h1><span class="header-section-number">1</span> Experimental Materials</h1>
 <ul>
-<li><a href="Exp_3a/exp3a_materials.zip">Download (Zip-folder) experimental materials</a></li>
+<li><a href="Exp_3b/exp3b_materials.zip">Download (Zip-folder) experimental materials</a></li>
 <li>The Zip-folder contains:
 <ul>
 <li>the animation files</li>
-<li>a print version of the study</li>
-<li>a demo video in MP4 format</li>
+<li>the instruction pictures</li>
+<li>demo videos in MP4 format</li>
 </ul></li>
 </ul>
 <hr />
 </div>
-<div id="demo-video" class="section level1">
-<h1><span class="header-section-number">2</span> Demo Video</h1>
-<p><video src="Exp_1/materials/demo.mp4" style="width:100.0%" controls=""><a href="Exp_1/materials/demo.mp4">Video</a></video></p>
+<div id="demo-videos" class="section level1">
+<h1><span class="header-section-number">2</span> Demo Videos</h1>
+<div id="condition-short-causal-latencies" class="section level2">
+<h2><span class="header-section-number">2.1</span> Condition: short causal latencies</h2>
+<p><video src="Exp_3b/materials/Exp3b_demo_short_latency.mp4" style="width:100.0%" controls=""><a href="Exp_3b/materials/Exp3b_demo_short_latency.mp4">Video</a></video></p>
+</div>
+<div id="condition-long-causal-latencies" class="section level2">
+<h2><span class="header-section-number">2.2</span> Condition: long causal latencies</h2>
+<p><video src="Exp_3b/materials/Exp3b_demo_long_latency.mp4" style="width:100.0%" controls=""><a href="Exp_3b/materials/Exp3b_demo_long_latency.mp4">Video</a></video></p>
 <hr />
+</div>
 </div>
 <div id="animations" class="section level1">
 <h1><span class="header-section-number">3</span> Animations</h1>
 <ul>
-<li><p>To view the animations used in the studies, click on the links below.</p></li>
-<li><p><strong>Animations in the instructions:</strong></p>
+<li>To view the animations used in the studies, click on the links below.</li>
+</ul>
+<div id="animations-in-the-instructions-learning-phase" class="section level2">
+<h2><span class="header-section-number">3.1</span> Animations in the instructions (learning phase)</h2>
 <ul>
-<li><a href="Exp_3a/experiment_files/Female_Demo2.html">First animation: generative cause and effect</a></li>
+<li>Generative cause in condition = short causal latencies
+<ul>
+<li><a href="Exp_3b/experiment_files/Female_Area2.html">Animation: generative cause and effect</a></li>
 </ul></li>
-<li><p><strong>Animations in the test phase:</strong></p>
+<li>Generative cause in condition = long causal latencies
 <ul>
-<li><a href="Exp_3a/experiment_files/Female_stopping_left_first.html">Stopping: Left preventer first</a></li>
-<li><a href="Exp_3a/experiment_files/Female_stopping_right_first.html">Stopping: Right preventer first</a></li>
-<li><a href="Exp_3a/experiment_files/Female_hindering_left_first_new.html">Hindering: Left preventer first</a></li>
-<li><a href="Exp_3a/experiment_files/Female_hindering_right_first_new.html">Hindering: Right preventer first</a></li>
+<li><a href="Exp_3b/experiment_files/Female_Area2.html">Animation: generative cause and effect</a></li>
+</ul></li>
+<li>Left preventer in condition = short causal latencies
+<ul>
+<li><a href="Exp_3b/experiment_files/Males_Area2_leftMale.html">Animation: left preventer, fast</a></li>
+</ul></li>
+<li>Right preventer in condition = short causal latencies
+<ul>
+<li><a href="Exp_3b/experiment_files/Males_Area2_RightMale.html">Animation: right preventer, fast</a></li>
+</ul></li>
+<li>Left preventer in condition = long causal latencies
+<ul>
+<li><a href="Exp_3b/experiment_files/Males_Area1_leftMale.html">Animation: left preventer, slow</a></li>
+</ul></li>
+<li>Right preventer in condition = long causal latencies
+<ul>
+<li><a href="Exp_3b/experiment_files/Males_Area1_RightMale.html">Animation: right preventer, slow</a></li>
 </ul></li>
 </ul>
+</div>
+<div id="test-animations" class="section level2">
+<h2><span class="header-section-number">3.2</span> Test animations</h2>
+<ul>
+<li><a href="Exp_3b/experiment_files/Left_first.html">Animation: first preventer = left</a></li>
+<li><a href="Exp_3b/experiment_files/Right_first.html">Animation: first preventer = right</a></li>
+</ul>
 <hr />
+</div>
 </div>
 <div id="data-and-analyses-scripts" class="section level1">
 <h1><span class="header-section-number">4</span> Data and Analyses Scripts</h1>
 <ul>
-<li><a href="Exp_3a/data_and_analyses/Exp3a_data_and_analyses.zip">Download (Zip-file) experimental data and analyses scripts</a></li>
+<li><a href="Exp_3b/Exp3b_data_and_analyses.zip">Download (Zip-file) experimental data and analyses scripts</a></li>
 <li>The Zip-folder contains:
 <ul>
 <li>a .txt file (tab delim) with the experimental data (see description below)</li>
 <li>a .RMD file which is the R-Markdown analysis code</li>
 <li>a .html file with is the knitted/ compiled version of the analysis script</li>
+<li>a .pdf file with a results graph</li>
 </ul></li>
 </ul>
 <div id="data-set-information" class="section level2">
@@ -483,10 +516,10 @@ body {
 <p>The data set contains the following columns:</p>
 <ul>
 <li><strong>sID</strong>: a subject ID</li>
-<li><strong>Prevention</strong>: factor coding whether the type of prevention was “stopping” (making an effect disappear) or “hindering” (keeping an effect from happening)</li>
-<li><strong>First_arrival</strong>: (counterbalacning) factor coding which of the two preventers occurred first</li>
+<li><strong>Prevention_Area</strong>: factor coding the causal latencies (“area1” = long latency; “area2” = short latency)</li>
+<li><strong>Order</strong>: (counterbalacning) factor coding which of the two preventers occurred first</li>
 <li><strong>justification</strong>: subjects’ explanations for their singular prevention judgments</li>
-<li><strong>selection</strong>: subjects’ singular prevention judgments (they selected one of three options; first vs. second vs. both)</li>
+<li><strong>selection</strong>: subjects’ singular prevention judgments (they selected one of three options; 1 = first vs. 2 = second vs. 3 = both)</li>
 <li><strong>Laptop_Confirmation</strong>: subjects had to confirm that they take part via a Laptop or Desktop PC (only the data of subjects who confirmed were registered)</li>
 <li><strong>Attention_Confirmation</strong>: subjects’ confirmation to pay attention (only the data of subjects who confirmed were registered)</li>
 <li><strong>Age</strong>: subjects’ age (in years)</li>
@@ -500,8 +533,8 @@ body {
 <div id="analysis-script" class="section level1">
 <h1><span class="header-section-number">5</span> Analysis Script</h1>
 <ul>
-<li><a href="Exp_3a/data_and_analyses/Exp3a_analysis.Rmd">View R-Markdown code</a></li>
-<li><a href="Exp_3a/data_and_analyses/Exp3a_analysis.html">View knitted/ compiled R-Markdown</a> (web view of analysis)</li>
+<li><a href="Exp_3b/data_and_analyses/Exp3b_analysis.Rmd">View R-Markdown code</a></li>
+<li><a href="Exp_3b/data_and_analyses/Exp3b_analysis.html">View knitted/ compiled R-Markdown</a> (web view of analysis)</li>
 </ul>
 </div>
 

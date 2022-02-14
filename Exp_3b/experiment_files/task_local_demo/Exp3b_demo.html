@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Demo Exp3b</title>
+    <script src="jspsych/jspsych.js"></script>
+    <script src="jspsych/plugin-html-button-response.js"></script>
+    <script src="jspsych/plugin-survey-multi-choice.js"></script>
+    <script src="jspsych/plugin-html-slider-response.js"></script>
+	<script src="jspsych/plugin-image-keyboard-response.js"></script>
+	<script src="jspsych/plugin-html-keyboard-response.js"></script>
+    <script src="jspsych/plugin-preload.js"></script>
+    <script src="jspsych/plugin-survey-text.js"></script>
+    <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body></body>
+  <script>
+  
+
+/* initialize jsPsych */
+var jsPsych = initJsPsych({
+      experiment_width: 1000,
+      on_finish: function() {
+        //jsPsych.data.displayData();
+        window.location = "https://app.prolific.co/submissions/complete?cc=42C7D9B4"
+      }
+    });
+    
+//var condition = CONDITION; 
+//var condition = Math.floor(Math.random() * (31 - 26 + 1)) + 26;
+var condition;
+
+jsPsych.data.addProperties({condition: +condition});
+console.log("The condition is "+condition);
+
+/* create timeline */
+var timeline = [];
+
+/* preload images */
+var preload = {
+  type: jsPsychPreload,
+  images: ['img/uni_org_color_li.jpg']
+}
+timeline.push(preload);
+
+var styles = `
+  p {
+    text-align: justify
+  }
+  
+`
+var styleSheet = document.createElement("style")
+styleSheet.type = "text/css"
+styleSheet.innerText = styles
+document.head.appendChild(styleSheet)
+
+
+
+
+
+//////////////////////////////////////////////////////
+/* Condition selection (just for offline demo) */
+
+var select = {
+  type: jsPsychSurveyText,
+  questions: [
+    {
+		prompt: 
+		`
+		<p><b>Select a condition: type in a number between 1 and 24.</b></p>
+		
+    <p>- In conditions 1 to 2, the effect onset is after the second preventer arrives. 
+    The difference between 1 and 2 is whether the first preventer is the upper (1) or lower (2) preventer.</p>
+		
+    <p>- In conditions 3 to 4, the effect onset is instantaneous; upon the arrival of the first preventer. 
+    The difference between 3 and 4 is whether the first preventer is the upper (3) or lower (4) preventer.</p>
+		`, 
+		placeholder: 'number between 1 and 4',
+		required: true,
+		name: 'CondSel',
+	},
+  ],
+	on_finish: function(data){
+	condition = data.response.CondSel,
+	console.log(condition);
+	} 
+}
+timeline.push(select);
+
+
+
+//////////////////////////////////////////////////////
+/* Instructions ( all conditions)  */
+var cond_selected = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function () {
+    return "You chose to see Condition "+condition;
+		},
+    choices: ['Continue']
+};
+timeline.push(cond_selected);
+
+
+
+
+
+
+//////////////////////////////////////////////////////
+/* Instructions ( all conditions) */
+var welcome = {
+    type: jsPsychHtmlButtonResponse,
+   stimulus:
+   `
+    <img src="img/uni_org_color_li.jpg" width = 100%></img>
+    <br>
+    <p>Welcome to this experiment. On the next screens, we will show you a fictitious scenario and some animations that we use to study our research question.</p>
+    <p>We will then ask you for your personal intuition about a particular situation that you will see in a final animation.</p>
+    <p><b>Please note</b>: For our purposes, it is important that you assume that everything is exactly as described in the scenario,
+    even if you think that the described situation is unrealistic, overly artificial, or too simple.</p>
+    <p><b>Also note</b>: This study contains memory checks with which we aim to ensure that you correctly understood the central aspects of the scenario.</p>
+    <p>So please read the scenario description that we will show you on the next screen thoroughly.</p>
+    <br>
+    `,
+     choices: ['Continue']
+}
+timeline.push(welcome);
+
+
+
+//////////////////////////////////////////////////////
+/* Confirmations */
+var confs = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "This study works properly only on Desktop PCs and Laptops, and not on Smartphones or Tablets. Please confirm that you take part via Desktop PC or Laptop.", 
+      name: 'DesktopConf', 
+      options: ['1: I confirm', '2: I do not confirm'], 
+      required: true
+    }, 
+    {
+      prompt: "For the scientific utility of the results, it is very important that you provide complete and careful responses. How seriously will you take your participation in the study?", 
+      name: 'AttentConf', 
+      options: ['1: I will take it seriously', '2: I will not take it seriously'], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({desktop_conf: data.response.DesktopConf, attent_conf: data.response.AttentConf});
+  },
+  preamble: "<b>Please note:</b>"
+};
+timeline.push(confs);
+
+
+
+/////////////////////////////////////////////////////////
+/* Instructions */
+var instr_1 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus:
+    `
+    <p><i>Please read the following completely fictitious scenario</i>:</p>
+    
+    <p>Scientists have discovered a moon in the solar system that contains very valuable minerals. To prevent the moon from being destroyed by asteroids, the scientists have installed 
+    a protection system. An illustration of the protection system is shown below.</p>
+    
+    <br>
+    <img src="img/system_illu.png" width = 100%></img>
+    <br>
+    
+    <p>As you can see, there are two detection satellites. These satellites are programmed to detect approaching asteroids. Whenever they detect an approaching asteroid, they send a signal to the 
+    laser cannon positioned on the moon's surface. The cannon then shoots a laser beam towards the asteroid and destroys it.</p>
+    
+    
+    <p><i>Please click continue to learn more.</i></p>
+    `,
+    choices: ['Continue']
+}
+timeline.push(instr_1);
+
+
+
+var instr_2 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus:
+    `
+    <p>Below you see an illustration that shows what happens when an asteroid is approaching. As you can see, both detection satellites detected the asteroid and sent a detection signal 
+    back to the laser cannon positioned on the moon.</p>
+    
+    <br>
+    <img src="img/alarm_illu.png" width = 100%></img>
+    <br>
+    
+    <p><i>Please click continue to learn more.</i></p>
+
+    `,
+    choices: ['Continue']
+}
+timeline.push(instr_2);
+
+
+
+var instr_3 = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus:
+    `
+    <p>Below you can see what happens when the cannon receives a detection signal from a detection satellite. As you can see, the cannon then shoots a laser beam towards the 
+    approaching asteroid to destroy it.</p>
+    
+    <br>
+    <img src="img/shot_illu.png" width = 100%></img>
+    <br>
+    
+    <p><i>On the next screens, we will show you animations with which you can learn how the system works.</i></p>
+    `,
+    choices: ['Continue']
+}
+timeline.push(instr_3);
+
+
+/////////////////////////////////////////////////////////
+/* illustration upper satellite */
+// no preemption 
+
+
+var illu_upper_no_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "Please select the option below that correctly describes what happened in the animation.", 
+      name: 'Sat_selection_demo', 
+      options: [
+                  "The upper satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "The lower satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "None of the satellites detected the approaching asteroid and the asteroid destroyed the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({sat_selection_upper_demo: data.response.Sat_selection_demo});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation with which you can learn how the protection system works. 
+    This animation will illustrate only the upper detection satellite. The lower detection satellite will be deactivated.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    Please observe thoroughly what happened on the occasion shown in the animation. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_demo_no_preemp_upper.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+var illu_lower_no_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "Please select the option below that correctly describes what happened in the animation.", 
+      name: 'Sat_selection_demo', 
+      options: [
+                  "The upper satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "The lower satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "None of the satellites detected the approaching asteroid and the asteroid destroyed the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({sat_selection_lower_demo: data.response.Sat_selection_demo});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation with which you can learn how the protection system works. 
+    This animation will illustrate only the lower detection satellite. The upper detection satellite will be deactivated.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    Please observe thoroughly what happened on the occasion shown in the animation. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_demo_no_preemp_lower.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+
+var illu_upper_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "Please select the option below that correctly describes what happened in the animation.", 
+      name: 'Sat_selection_demo', 
+      options: [
+                  "The upper satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "The lower satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "None of the satellites detected the approaching asteroid and the asteroid destroyed the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({sat_selection_upper_demo: data.response.Sat_selection_demo});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation with which you can learn how the protection system works. 
+    This animation will illustrate only the upper detection satellite. The lower detection satellite will be deactivated.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    Please observe thoroughly what happened on the occasion shown in the animation. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_demo_preemp_upper.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+var illu_lower_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "Please select the option below that correctly describes what happened in the animation.", 
+      name: 'Sat_selection_demo', 
+      options: [
+                  "The upper satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "The lower satellite detected an approaching asteroid and sent a signal to the cannon. The cannon then shot a laser beam that destroyed the asteroid.", 
+                  "None of the satellites detected the approaching asteroid and the asteroid destroyed the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({sat_selection_lower_demo: data.response.Sat_selection_demo});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation with which you can learn how the protection system works. 
+    This animation will illustrate only the lower detection satellite. The upper detection satellite will be deactivated.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    Please observe thoroughly what happened on the occasion shown in the animation. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_demo_preemp_lower.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+var sat_demo_no_preemp = {
+  timeline: [illu_upper_no_preemp, illu_lower_no_preemp],
+  conditional_function: function () {
+    if (condition == 1 || condition == 2) {
+      return true; 
+    } else {
+      return false;
+    }
+  }
+}
+timeline.push(sat_demo_no_preemp);
+
+
+var sat_demo_preemp = {
+  timeline: [illu_upper_preemp, illu_lower_preemp],
+  conditional_function: function () {
+    if (condition == 3 || condition == 4) {
+      return true; 
+    } else {
+      return false;
+    }
+  }
+}
+timeline.push(sat_demo_preemp);
+
+
+
+
+
+
+/////////////////////////////////////////////////////////
+/* Test phase prompt */
+var test_prompt = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus:
+    `
+    <p>You have now learned how the different components of the system work. On the next screen, we will show you a new animation that shows what happened on a specific occasion.</p>
+    
+    <p>Please watch that animation thoroughly, because we will then ask you a question about that situation.</p>
+    
+    <p><i>Click Continue to proceed to the animation.</i></p>
+    `,
+    choices: ['Continue']
+}
+timeline.push(test_prompt);
+
+
+
+///////////////////////////////////////////////////////////////// Test Phase 
+// both on time (no preemption)
+var test_upper_no_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "According to your intuition, which option best describes what happened on the occasion shown in the animation.", 
+      name: 'Sat_selection_test', 
+      options: [
+                  "The upper satellite prevented the asteroid from hitting the moon.", 
+                  "The lower satellite prevented the asteroid from hitting the moon.", 
+                  "Both satellites prevented the asteroid from hitting the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({test_case: 'both_on_time', first_preventer: 'upper', sat_selection_test: data.response.Sat_selection_test});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation showing what happened on a particular occasion. Please make sure that you carefully observe what happens on that occasion.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_upperFirst_no_preemp.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+var test_lower_no_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "According to your intuition, which option best describes what happened on the occasion shown in the animation.", 
+      name: 'Sat_selection_test', 
+      options: [
+                  "The upper satellite prevented the asteroid from hitting the moon.", 
+                  "The lower satellite prevented the asteroid from hitting the moon.", 
+                  "Both satellites prevented the asteroid from hitting the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({test_case: 'both_on_time', first_preventer: 'lower', sat_selection_test: data.response.Sat_selection_test});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation showing what happened on a particular occasion. Please make sure that you carefully observe what happens on that occasion.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_lowerFirst_no_preemp.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+var sat_test_no_preemp_upper = {
+  timeline: [test_upper_no_preemp],
+  conditional_function: function () {
+    if (condition == 1) {
+      return true; 
+    } else {
+      return false;
+    }
+  }
+}
+timeline.push(sat_test_no_preemp_upper);
+
+
+var sat_test_no_preemp_lower = {
+  timeline: [test_lower_no_preemp],
+  conditional_function: function () {
+    if (condition == 2) {
+      return true; 
+    } else {
+      return false;
+    }
+  }
+}
+timeline.push(sat_test_no_preemp_lower);
+
+
+
+
+// second not on time (preemption)
+var test_upper_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "According to your intuition, which option best describes what happened on the occasion shown in the animation.", 
+      name: 'Sat_selection_test', 
+      options: [
+                  "The upper satellite prevented the asteroid from hitting the moon.", 
+                  "The lower satellite prevented the asteroid from hitting the moon.", 
+                  "Both satellites prevented the asteroid from hitting the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({test_case: 'one_too_late', first_preventer: 'upper', sat_selection_test: data.response.Sat_selection_test});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation showing what happened on a particular occasion. Please make sure that you carefully observe what happens on that occasion.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_upperFirst_preemp.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+
+var test_lower_preemp = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "According to your intuition, which option best describes what happened on the occasion shown in the animation.", 
+      name: 'Sat_selection_test', 
+      options: [
+                  "The upper satellite prevented the asteroid from hitting the moon.", 
+                  "The lower satellite prevented the asteroid from hitting the moon.", 
+                  "Both satellites prevented the asteroid from hitting the moon."
+                ], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({test_case: 'one_too_late', first_preventer: 'lower', sat_selection_test: data.response.Sat_selection_test});
+  },
+  preamble: 
+  `
+    <p>
+    Below you see an animation showing what happened on a particular occasion. Please make sure that you carefully observe what happens on that occasion.
+    To start the animation, you have to click the blue "Start" button. 
+    The animation will last approximately 15 seconds. 
+    After these 15 seconds, the "Start" button will appear again. You can watch the animation as often as you like. 
+    </p>
+    <br>
+    <iframe src="img/laser_moon_lowerFirst_preemp.html" width="1100" height="705" seamless></iframe>
+    <br>
+    <p>
+    If you have observed carefully what happened in the situation, please answer the following question.
+    </p>
+  `
+};
+
+var sat_test_preemp_upper = {
+  timeline: [test_upper_preemp],
+  conditional_function: function () {
+    if (condition == 3) {
+      return true; 
+    } else {
+      return false;
+    }
+  }
+}
+timeline.push(sat_test_preemp_upper);
+
+
+var sat_test_preemp_lower = {
+  timeline: [test_lower_preemp],
+  conditional_function: function () {
+    if (condition == 4) {
+      return true; 
+    } else {
+      return false;
+    }
+  }
+}
+timeline.push(sat_test_preemp_lower);
+
+
+////////////////////////////////////// free explanation 
+
+var explan = {
+  type: jsPsychSurveyText,
+  name: 'Explanation',
+  questions: [
+    {prompt: `
+              <p>On this screen, we'd like to learn a little bit more about the reasons for the judgment you just made.</p>
+              
+              <p><i>Please use the text field below to briefly explain why you made this judgment.</i></p>
+             `, 
+    rows: 10, 
+    columns: 100, 
+    required: true,
+    name: 'Explanation'
+    },
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({explanation: data.response.Explanation});
+  },
+}
+timeline.push(explan);
+
+
+//////////////////////////////////////////////////////
+/* Memory Checks */
+var mem_check = {
+  type: jsPsychSurveyMultiChoice,
+  questions: [
+    {
+      prompt: "Please select the option that is correct about the last animation that you saw and evaluated.", 
+      name: 'Prev_check', 
+      options: ['The upper satellite spotted the asteroid first.', 'The lower satellite spotted the asteroid first.'], 
+      required: true
+    }, 
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({preventers_check: data.response.Prev_check});
+  },
+  preamble: "<b>Please answer this additional question:</b>"
+};
+timeline.push(mem_check);
+
+
+
+
+
+/////////////////////////////////////// demographics
+var demogr_age = {
+  type: jsPsychSurveyText,
+  name: 'Age_query',
+  questions: [
+    {prompt: 'How old are you?', 
+    placeholder: 'Age as a number', 
+    required: true,
+    name: 'Age'
+    },
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({age: data.response.Age});
+  },
+}
+
+
+
+var demogr_gender = {
+  type: jsPsychSurveyMultiChoice,
+  name: 'gender_query',
+  questions: [
+    {
+      prompt: "Please indicate with which gender you identify.", 
+      options: ['1: male', '2: female', '3: non-binary', '4: prefer not to say'],
+      required: true,
+      name: 'Gender'
+    },
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({gender: data.response.Gender});
+  },
+};
+timeline.push(demogr_age, demogr_gender);
+
+
+
+
+/////////////////////////////////////// technical issues
+var tech_issues = {
+  type: jsPsychSurveyText,
+  name: 'Tech_issue_query',
+  questions: [
+    {prompt: 'In the text field below you can report any errors that you came across during the study (e.g., technical issues, layout problems, spelling errors, errors in program logic and flow, etc.).', 
+    rows: 10, 
+    columns: 100, 
+    required: false,
+    name: 'Tech_issue_report'
+    },
+  ],
+  on_finish: function(data){
+	  jsPsych.data.addProperties({tech_issues: data.response.Tech_issue_report});
+	  console.log(data.response.Tech_issue_report)
+  },
+}
+timeline.push(tech_issues);
+
+///////////////////////////////////// debriefing
+
+var debriefing = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: 
+    `
+    <img src="img/uni_org_color_li.jpg" width = 100%></img>
+    <p><b>Thank you for taking part in this study!</b></p>
+  
+    <p>The aim of this experiment is to find out more about how people reason about the preventive relationships. 
+    If you are interested in further details or if you have any questions or comments concerning the experiment, 
+    feel free to contact me (Simon Stephan) under <i>sstepha1@uni-goettingen.de</i>
+    
+    <p>To ensure you receive your reward, please click the button below to return to the Prolific website:</p>
+    `
+    ,
+    choices: ['Finish study']
+};
+timeline.push(debriefing);
+
+/////////////////////////////////////////////////////////////////
+/* start the experiment */
+    jsPsych.run(timeline);
+
+
+  
+  </script>
+</html>

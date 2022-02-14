@@ -199,7 +199,7 @@ g<- ggplot(plotdata,
   myTheme
 
 g
-#ggsave("Exp3b_.pdf",width=7.5,height=4)
+ggsave("Exp3b_selections.svg",width=7.5,height=4)
 ```
 
 

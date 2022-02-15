@@ -1,5 +1,5 @@
 ---
-title: "Preemption in Keeping an Effect from Happening Prevention"
+title: "Preemption in Keeping an Effect from Happening Prevention (Main study)"
 output:  
   html_document:
     number_sections: true
@@ -58,7 +58,7 @@ table(tdata$gender)
 
 ```{r}
 # declare factors and their levels 
-tdata$test_case <- factor(tdata$test_case, levels = c("one_too_late", "both_on_time"), labels = c("Immediate effect", "Delayed effect"))
+tdata$test_case <- factor(tdata$test_case, levels = c("one_too_late", "both_on_time"), labels = c("contiguous", "delayed"))
 
 
 
@@ -133,17 +133,44 @@ CI_first_min_2 <- t$conf.int[1]
 CI_first_max_2 <- t$conf.int[2]
 t
 
+t <- prop.test(cases[5],N, p = 1/3, correct=FALSE) # get CI for Invariance government
+CI_second_min_2 <- t$conf.int[1]
+CI_second_max_2 <- t$conf.int[2]
+t
 
 
 
-CI_low <- c(CI_both_min_1, CI_first_min_1, CI_both_min_2, CI_first_min_2)
 
-CI_up <- c(CI_both_max_1, CI_first_max_1, CI_both_max_2, CI_first_max_2)
+
+CI_low <- c(CI_both_min_1, CI_first_min_1, CI_both_min_2, CI_first_min_2, CI_second_min_2)
+
+CI_up <- c(CI_both_max_1, CI_first_max_1, CI_both_max_2, CI_first_max_2, CI_second_max_2)
 
 plotdata$CI_low <- CI_low
 plotdata$CI_up <- CI_up
 
 ```
+
+
+### Test differences between the conditions for the "fast" and "slow" proportions 
+
+#### "first"
+
+```{r}
+prop.test(c(cases[2], cases[4]), c(N,N), p = NULL, alternative = "two.sided",
+          correct = TRUE)
+```
+
+#### "both"
+
+```{r}
+prop.test(c(cases[1], cases[3]), c(N,N), p = NULL, alternative = "two.sided",
+          correct = TRUE)
+```
+
+
+
+
 
 # Graph of the Results 
 
@@ -195,11 +222,15 @@ g<- ggplot(plotdata,
   scale_fill_brewer(palette = "Set2") +
   labs(y = "Percent", 
        fill = "Singular \nPreventer",
-       x = "Scenario")+
+       x = "Preventive mechanism")+
   myTheme
 
 g
-ggsave("Exp3b_selections.svg",width=7.5,height=4)
+
+ggsave("Exp_moon_selections.pdf",width=7.5,height=4)
+#ggsave("Exp3b_selections.svg",width=7.5,height=4)
+
+
 ```
 
 

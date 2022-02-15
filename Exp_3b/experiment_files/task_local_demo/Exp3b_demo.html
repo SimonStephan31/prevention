@@ -89,22 +89,6 @@ timeline.push(select);
 
 
 //////////////////////////////////////////////////////
-/* Instructions ( all conditions)  */
-var cond_selected = {
-    type: jsPsychHtmlButtonResponse,
-    stimulus: function () {
-    return "You chose to see Condition "+condition;
-		},
-    choices: ['Continue']
-};
-timeline.push(cond_selected);
-
-
-
-
-
-
-//////////////////////////////////////////////////////
 /* Instructions ( all conditions) */
 var welcome = {
     type: jsPsychHtmlButtonResponse,
@@ -169,7 +153,7 @@ var instr_1 = {
     <br>
     
     <p>As you can see, there are two detection satellites. These satellites are programmed to detect approaching asteroids. Whenever they detect an approaching asteroid, they send a signal to the 
-    laser cannon positioned on the moon's surface. The cannon then shoots a laser beam towards the asteroid and destroys it.</p>
+    laser cannon positioned on the moon's surface. The cannon then is activated and shoots a laser beam towards the asteroid and destroys it as soon as the asteroid is close enough.</p>
     
     
     <p><i>Please click continue to learn more.</i></p>
@@ -743,8 +727,6 @@ timeline.push(debriefing);
 /////////////////////////////////////////////////////////////////
 /* start the experiment */
     jsPsych.run(timeline);
-
-
   
   </script>
 </html>
